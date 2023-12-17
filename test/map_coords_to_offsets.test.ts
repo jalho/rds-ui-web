@@ -17,14 +17,37 @@ test.describe("map_coords_to_offsets", function () {
       ),
       {
         left:
-          (3000 / 2 - 0)
-          * (100 / 3000)
-          - 10 / 2,
+          (3000 / 2)      // center
+          * (100 / 3000)  // scale
+          - 10 / 2,       // marker size offset
 
         top:
-          (3000 / 2 - 0)
-          * (100 / 3000)
-          - 10 / 2,
+          (3000 / 2)      // center
+          * (100 / 3000)  // scale
+          - 10 / 2,       // marker size offset
+      } satisfies ReturnType<typeof map_coords_to_offsets>
+    );
+  });
+
+  test.it("maps RCON coords (1500.0, 0.0, 0.0) horizontally right, vertically center", function () {
+    assert.deepStrictEqual(
+      map_coords_to_offsets(
+        {
+          x: 1500,
+          y: 0,
+          z: 0,
+        },
+        3000,
+        100,
+        10
+      ),
+      {
+        left:
+          100         // horizontally right
+          - (10 / 2), // marker size offset
+        top:
+          (100 / 2)   // vertically center
+          - (10 / 2), // marker size offset
       } satisfies ReturnType<typeof map_coords_to_offsets>
     );
   });

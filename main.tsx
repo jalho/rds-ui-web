@@ -124,14 +124,7 @@ function App(): React.JSX.Element {
     game_time: 0,
     players: [],
     sync_time_ms: 0,
-    tcs: [
-      // TODO: remove dummy data
-      {
-        auth_count: 1,
-        id: "123456",
-        position: { x: 0, y: 0, z: 100 },
-      },
-    ],
+    tcs: [],
   });
 
   React.useEffect(function connect() {

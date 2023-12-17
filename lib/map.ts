@@ -6,15 +6,16 @@ function map_coords_to_offsets(
   map_element_edge_length_px: number,
   marker_size_px: number
 ): { top: number; left: number } {
+  const scale = map_element_edge_length_px / game_world_edge_length_meters;
+  const origin = game_world_edge_length_meters / 2;
+  const marker_size_offset = marker_size_px / 2;
+
+  const left = scale * (origin + coords.x) - marker_size_offset;
+  const top = scale * (origin - coords.y) - marker_size_offset;
+
   return {
-    left:
-      (game_world_edge_length_meters / 2 - coords.x)                 // transform origin
-      * (map_element_edge_length_px / game_world_edge_length_meters) // scale
-      - marker_size_px / 2,                                          // adjust offset for marker
-    top:
-      (game_world_edge_length_meters / 2 - coords.y)                 // transform origin
-      * (map_element_edge_length_px / game_world_edge_length_meters) // scale
-      - marker_size_px / 2,                                          // adjust offset for marker
+    left,
+    top,
   };
 }
 
