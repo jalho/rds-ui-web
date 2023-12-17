@@ -1,7 +1,8 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
+import { map_coords_to_offsets } from "./lib/map";
 
-type RCON_Position = {
+export type RCON_Position = {
   /** Horizontal offset from the map's center. */
   x: number;
   /** Vertical offset from the map's center. */
@@ -40,20 +41,6 @@ function RCONView(props: { rcon_state: RCON_State }): React.JSX.Element {
       </ul>
     </div>
   );
-}
-
-function map_coords_to_offsets(
-  coords: RCON_Position,
-  game_world_edge_length_meters: number,
-  map_element_edge_length_px: number,
-  marker_size_px: number
-): { top: number; left: number } {
-  // TODO!
-
-  return {
-    left: 0,
-    top: 0,
-  };
 }
 
 function Markers(props: {
