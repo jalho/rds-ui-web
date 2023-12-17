@@ -158,7 +158,7 @@ function App(): React.JSX.Element {
   return (
     <>
       <RCONView rcon_state={rcon_state} />
-      <WorldMap edge_length_px={100} markers={make_markers(rcon_state)} />
+      <WorldMap edge_length_px={750} markers={make_markers(rcon_state)} />
     </>
   );
 }
