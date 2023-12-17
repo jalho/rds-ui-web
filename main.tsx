@@ -42,18 +42,57 @@ function RCONView(props: { rcon_state: RCON_State }): React.JSX.Element {
   );
 }
 
+function map_coords_to_offsets(
+  coords: RCON_Position,
+  game_world_edge_length_meters: number,
+  map_element_edge_length_px: number,
+  marker_size_px: number
+): { top: number; left: number } {
+  // TODO!
+
+  return {
+    left: 0,
+    top: 0,
+  };
+}
+
 function Markers(props: {
   data: { [id: string]: MapEntity };
   size_px: number;
+  map_dimensions: {
+    /**
+     * Length of the edges of the square HTML element that renders the game
+     * world map.
+     */
+    map_element_edge_length_px: number;
+    /**
+     * Length of the edges of the game world in game units (meters).
+     * Corresponds to the RustDedicated startup argument `worldsize`.
+     *
+     * @example 3000
+     * @example 4500
+     */
+    game_world_edge_length_meters: number;
+  };
 }): React.JSX.Element[] {
   const elements = Object.values(props.data).map(function (entity) {
+    const offsets = map_coords_to_offsets(
+      entity.position,
+      props.map_dimensions.game_world_edge_length_meters,
+      props.map_dimensions.map_element_edge_length_px,
+      props.size_px
+    );
+
     return (
       <div
+        key={entity.id}
         style={{
           backgroundColor: "red",
           width: props.size_px,
           height: props.size_px,
           position: "absolute",
+          top: offsets.top,
+          left: offsets.left,
         }}
       ></div>
     );
@@ -80,8 +119,15 @@ function WorldMap(props: WorldMapProps): React.JSX.Element {
             position: "absolute",
           }}
         ></img>
+        <Markers
+          data={props.markers}
+          size_px={10}
+          map_dimensions={{
+            map_element_edge_length_px: props.edge_length_px,
+            game_world_edge_length_meters: 3000, // TODO: get this from backend, or calculate based on the image asset?
+          }}
+        />
       </div>
-      <Markers data={props.markers} size_px={10} />
     </>
   );
 }
@@ -91,7 +137,14 @@ function App(): React.JSX.Element {
     game_time: 0,
     players: [],
     sync_time_ms: 0,
-    tcs: [],
+    tcs: [
+      // TODO: remove dummy data
+      {
+        auth_count: 1,
+        id: "123456",
+        position: { x: 0, y: 0, z: 100 },
+      },
+    ],
   });
 
   React.useEffect(function connect() {
