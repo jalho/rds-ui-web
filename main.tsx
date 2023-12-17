@@ -149,7 +149,7 @@ function WorldMap(props: WorldMapProps): React.JSX.Element {
     <>
       <div style={{ position: "relative" }}>
         <img
-          src="./.local/map_3000_1337.png"
+          src="./.local/map_3000_1337.png" // TODO: get image from backend, or ask from user (can be rendered in-game on client side)
           style={{
             width: props.edge_length_px,
             height: props.edge_length_px,
