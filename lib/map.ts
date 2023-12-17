@@ -8,13 +8,13 @@ function map_coords_to_offsets(
 ): { top: number; left: number } {
   return {
     left:
-      (game_world_edge_length_meters / 2 - coords.x) *
-        (map_element_edge_length_px / game_world_edge_length_meters) -
-      marker_size_px / 2,
+      (game_world_edge_length_meters / 2 - coords.x)                 // transform origin
+      * (map_element_edge_length_px / game_world_edge_length_meters) // scale
+      - marker_size_px / 2,                                          // adjust offset for marker
     top:
-      (game_world_edge_length_meters / 2 - coords.y) *
-        (map_element_edge_length_px / game_world_edge_length_meters) -
-      marker_size_px / 2,
+      (game_world_edge_length_meters / 2 - coords.y)                 // transform origin
+      * (map_element_edge_length_px / game_world_edge_length_meters) // scale
+      - marker_size_px / 2,                                          // adjust offset for marker
   };
 }
 

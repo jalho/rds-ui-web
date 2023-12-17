@@ -17,14 +17,14 @@ test.describe("map_coords_to_offsets", function () {
       ),
       {
         left:
-          (3000 / 2 - 0)  // transform origin
-          * (100 / 3000)  // scale
-          - 10 / 2,       // adjust offset for marker
-        
+          (3000 / 2 - 0)
+          * (100 / 3000)
+          - 10 / 2,
+
         top:
-          (3000 / 2 - 0)  // transform origin
-          * (100 / 3000)  // scale
-          - 10 / 2,       // adjust offset for marker
+          (3000 / 2 - 0)
+          * (100 / 3000)
+          - 10 / 2,
       } satisfies ReturnType<typeof map_coords_to_offsets>
     );
   });
