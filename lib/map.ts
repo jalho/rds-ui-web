@@ -1,4 +1,4 @@
-import { RCON_Position } from "../main";
+import { RCON_Position } from "../main.jsx";
 
 function map_coords_to_offsets(
   coords: RCON_Position,
