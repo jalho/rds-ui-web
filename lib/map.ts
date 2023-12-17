@@ -7,7 +7,10 @@ function map_coords_to_offsets(
   marker_size_px: number
 ): { top: number; left: number } {
   return {
-    left: 0,
+    left:
+      (game_world_edge_length_meters / 2 - coords.x) *
+        (map_element_edge_length_px / game_world_edge_length_meters) -
+      marker_size_px / 2,
     top:
       (game_world_edge_length_meters / 2 - coords.y) *
         (map_element_edge_length_px / game_world_edge_length_meters) -

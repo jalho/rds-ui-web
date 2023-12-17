@@ -16,8 +16,15 @@ test.describe("map_coords_to_offsets", function () {
         10
       ),
       {
-        left: 0,
-        top: (3000 / 2 - 0) * (100 / 3000) - 10 / 2,
+        left:
+          (3000 / 2 - 0)  // transform origin
+          * (100 / 3000)  // scale
+          - 10 / 2,       // adjust offset for marker
+        
+        top:
+          (3000 / 2 - 0)  // transform origin
+          * (100 / 3000)  // scale
+          - 10 / 2,       // adjust offset for marker
       } satisfies ReturnType<typeof map_coords_to_offsets>
     );
   });
