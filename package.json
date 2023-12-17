@@ -1,0 +1,16 @@
+{
+  "name": "rds-ui",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "esbuild main.tsx --bundle --outfile=bundle.js"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.45",
+    "@types/react-dom": "18.2.18",
+    "esbuild": "0.19.9"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}
