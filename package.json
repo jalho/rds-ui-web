@@ -1,5 +1,5 @@
 {
-  "name": "rds-ui",
+  "name": "rds-ui-web",
   "version": "1.0.0",
   "scripts": {
     "build": "esbuild main.tsx --bundle --outfile=bundle.js"
