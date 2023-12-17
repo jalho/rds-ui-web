@@ -84,6 +84,8 @@ function Markers(props: {
             backgroundColor: "red",
             width: props.size_px,
             height: props.size_px,
+            borderRadius: "50%",
+            opacity: "70%"
           }}
         />
         {entity.discriminator === "player" ? <PlayerTooltip entity={entity} /> : <TCTooltip entity={entity} />}

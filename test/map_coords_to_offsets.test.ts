@@ -55,4 +55,5 @@ test.describe("map_coords_to_offsets", function () {
 
 // TODO: Add more tests... Should take into account RCON rendered margins or
 //       something. E.g. `teleportpos 1000.0,100.0,0.0` marker goes a couple
-//       squares too much to the right on a map of `worldsize` 3000
+//       squares too much to the right on a map of `worldsize` 3000. The offset
+//       error increases as distance from origin increases...
