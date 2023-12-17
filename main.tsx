@@ -74,18 +74,44 @@ function Markers(props: {
       <div
         key={entity.id}
         style={{
-          backgroundColor: "red",
-          width: props.size_px,
-          height: props.size_px,
           position: "absolute",
           top: offsets.top,
           left: offsets.left,
         }}
-      ></div>
+      >
+        <div
+          style={{
+            backgroundColor: "red",
+            width: props.size_px,
+            height: props.size_px,
+          }}
+        />
+        <MarkerTooltip entity={entity} />
+      </div>
     );
   });
 
   return elements;
+}
+
+function MarkerTooltip(props: { entity: MapEntity }): React.JSX.Element {
+  const label = props.entity.id.length === 17 ? "player" : "TC"; // SteamID is len 17 string, entity IDs are shorter
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "black",
+        color: "white",
+      }}
+    >
+      <span>{label}</span>
+      <span>ID: {props.entity.id}</span>
+      <span>
+        Position: {props.entity.position.x},{props.entity.position.z},{props.entity.position.y}
+      </span>
+    </div>
+  );
 }
 
 type ID = string;
