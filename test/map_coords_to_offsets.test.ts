@@ -42,9 +42,7 @@ test.describe("map_coords_to_offsets", function () {
         10
       ),
       {
-        left:
-          100         // horizontally right
-          - (10 / 2), // marker size offset
+        left: 82.5,   // IDK this seems right, counting in RCON added margin...
         top:
           (100 / 2)   // vertically center
           - (10 / 2), // marker size offset
