@@ -63,12 +63,17 @@ function Markers(props: {
   };
 }): React.JSX.Element[] {
   const elements = Object.values(props.data).map(function (entity) {
+    const [tooltip_open, set_tooltip_open] = React.useState<boolean>(false);
+
     const offsets = map_coords_to_offsets(
       entity.position,
       props.map_dimensions.game_world_edge_length_meters,
       props.map_dimensions.map_element_edge_length_px,
       props.size_px
     );
+
+    const tooltip =
+      entity.discriminator === "player" ? <PlayerTooltip entity={entity} /> : <TCTooltip entity={entity} />;
 
     return (
       <div
@@ -85,10 +90,16 @@ function Markers(props: {
             width: props.size_px,
             height: props.size_px,
             borderRadius: "50%",
-            opacity: "70%"
+            opacity: "70%",
+          }}
+          onMouseEnter={function (event) {
+            if (!tooltip_open) set_tooltip_open(true);
+          }}
+          onMouseLeave={function (event) {
+            if (tooltip_open) set_tooltip_open(false);
           }}
         />
-        {entity.discriminator === "player" ? <PlayerTooltip entity={entity} /> : <TCTooltip entity={entity} />}
+        {tooltip_open && tooltip}
       </div>
     );
   });
@@ -126,7 +137,9 @@ function PlayerTooltip(props: { entity: RCON_Player }): React.JSX.Element {
         color: "white",
       }}
     >
-      <span>Player <code>{props.entity.display_name}</code></span>
+      <span>
+        Player <code>{props.entity.display_name}</code>
+      </span>
       <span>Steam ID: {props.entity.id}</span>
       <span>
         Position: {props.entity.position.x},{props.entity.position.z},{props.entity.position.y}
