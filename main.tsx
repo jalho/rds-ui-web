@@ -132,6 +132,7 @@ function PlayerTooltip(props: { entity: RCON_Player }): React.JSX.Element {
         Position: {props.entity.position.x},{props.entity.position.z},{props.entity.position.y}
       </span>
       <span>Health: {props.entity.health}</span>
+      <span>Address: {props.entity.address}</span>
       <span>Connected: {props.entity.connected_seconds} sec</span>
     </div>
   );
