@@ -44,7 +44,7 @@ function RCONView(props: { rcon_state: RCON_State }): React.JSX.Element {
 }
 
 function Markers(props: {
-  data: { [id: string]: MapEntity };
+  data: { [id: ID]: MapEntity };
   size_px: number;
   map_dimensions: {
     /**
@@ -86,7 +86,7 @@ function Markers(props: {
             height: props.size_px,
           }}
         />
-        <MarkerTooltip entity={entity} />
+        {entity.discriminator === "player" ? <PlayerTooltip entity={entity} /> : <TCTooltip entity={entity} />}
       </div>
     );
   });
@@ -94,8 +94,7 @@ function Markers(props: {
   return elements;
 }
 
-function MarkerTooltip(props: { entity: MapEntity }): React.JSX.Element {
-  const label = props.entity.id.length === 17 ? "player" : "TC"; // SteamID is len 17 string, entity IDs are shorter
+function TCTooltip(props: { entity: RCON_ToolCupboard }): React.JSX.Element {
   return (
     <div
       style={{
@@ -105,20 +104,43 @@ function MarkerTooltip(props: { entity: MapEntity }): React.JSX.Element {
         color: "white",
       }}
     >
-      <span>{label}</span>
+      <span>TC</span>
       <span>ID: {props.entity.id}</span>
       <span>
         Position: {props.entity.position.x},{props.entity.position.z},{props.entity.position.y}
       </span>
+      <span>Authorized players: {props.entity.auth_count}</span>
+    </div>
+  );
+}
+
+function PlayerTooltip(props: { entity: RCON_Player }): React.JSX.Element {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "black",
+        color: "white",
+      }}
+    >
+      <span>Player <code>{props.entity.display_name}</code></span>
+      <span>Steam ID: {props.entity.id}</span>
+      <span>
+        Position: {props.entity.position.x},{props.entity.position.z},{props.entity.position.y}
+      </span>
+      <span>Health: {props.entity.health}</span>
+      <span>Connected: {props.entity.connected_seconds} sec</span>
     </div>
   );
 }
 
 type ID = string;
-type MapEntity = RCON_Player | RCON_ToolCupboard;
+type Discriminated<Discriminator> = { discriminator: Discriminator };
+type MapEntity = (RCON_Player & Discriminated<"player">) | (RCON_ToolCupboard & Discriminated<"tc">);
 type WorldMapProps = {
   edge_length_px: number;
-  markers: { [id: string]: MapEntity };
+  markers: { [id: ID]: MapEntity };
 };
 function WorldMap(props: WorldMapProps): React.JSX.Element {
   return (
@@ -182,13 +204,15 @@ function App(): React.JSX.Element {
   );
 }
 
-function make_markers(rcon_state: RCON_State): { [id: string]: MapEntity } {
-  const map: { [id: string]: MapEntity } = {};
+function make_markers(rcon_state: RCON_State): { [id: ID]: MapEntity } {
+  const map: { [id: ID]: MapEntity } = {};
 
   // TODO: get as a hash map from backend instead!
-  for (const player of rcon_state.players) map[player.id] = player;
+  for (const player of rcon_state.players)
+    map[player.id] = Object.assign(player, { discriminator: "player" } satisfies Discriminated<"player">);
 
-  for (const tc of rcon_state.tcs) map[tc.id] = tc;
+  for (const tc of rcon_state.tcs)
+    map[tc.id] = Object.assign(tc, { discriminator: "tc" } satisfies Discriminated<"tc">);
 
   return map;
 }
