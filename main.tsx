@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
-import { map_coords_to_offsets } from "./lib/map.js";
+import { map_coords_to_offsets } from "./lib/map_coords_to_offsets.js";
 
 export type RCON_Position = {
   /** Horizontal offset from the map's center. */

@@ -1,4 +1,4 @@
-import { map_coords_to_offsets } from "../lib/map.js";
+import { map_coords_to_offsets } from "../lib/map_coords_to_offsets.js";
 import test from "node:test";
 import * as assert from "node:assert";
 
