@@ -4,11 +4,11 @@ function map_coords_to_offsets(
   coords: RCON_Position,
   game_world_edge_length_meters: number,
   map_element_edge_length_px: number,
-  marker_size_px: number
+  marker_size_px: number,
+  game_world_margin: number,
 ): { top: number; left: number } {
-  const margin = 1000; // RCON rendered map images included water margin
-  const scale = map_element_edge_length_px / (game_world_edge_length_meters + margin);
-  const origin = (game_world_edge_length_meters + margin) / 2;
+  const scale = map_element_edge_length_px / (game_world_edge_length_meters + game_world_margin);
+  const origin = (game_world_edge_length_meters + game_world_margin) / 2;
   const marker_size_offset = marker_size_px / 2;
 
   const left = scale * (origin + coords.x) - marker_size_offset;

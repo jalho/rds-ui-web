@@ -60,6 +60,11 @@ function Markers(props: {
      * @example 4500
      */
     game_world_edge_length_meters: number;
+    /**
+     * Margin on top of `game_world_edge_length_meters` rendered in the game
+     * world image.
+     */
+    game_world_margin: number;
   };
 }): React.JSX.Element[] {
   const elements = Object.values(props.data).map(function (entity) {
@@ -69,7 +74,8 @@ function Markers(props: {
       entity.position,
       props.map_dimensions.game_world_edge_length_meters,
       props.map_dimensions.map_element_edge_length_px,
-      props.size_px
+      props.size_px,
+      props.map_dimensions.game_world_margin
     );
 
     const tooltip =
@@ -157,13 +163,27 @@ type MapEntity = (RCON_Player & Discriminated<"player">) | (RCON_ToolCupboard & 
 type WorldMapProps = {
   edge_length_px: number;
   markers: { [id: ID]: MapEntity };
+  /**
+   * Size of the original game world map (.PNG rendered by RCON after issuing
+   * command `rendermap`).
+   */
+  original_rendered_map_edge_length_px: number;
 };
 function WorldMap(props: WorldMapProps): React.JSX.Element {
+  /**
+   * It seems Rust renders world map 1000 px bigger than what is the `worldsize`
+   * parameter given as `RustDedicated` executable's startup argument.
+   */
+  const game_world_margin = 1000;
+  const world_size = props.original_rendered_map_edge_length_px - game_world_margin;
+
   return (
     <>
+      <p>original_rendered_map_edge_length_px: {props.original_rendered_map_edge_length_px}</p>
+      <p>world_size: {world_size} (deduced)</p>
       <div style={{ position: "relative" }}>
         <img
-          src="./.local/map_3000_1337.png" // TODO: get image from backend, or ask from user (can be rendered in-game on client side)
+          src="./.local/map_4500_1337.png" // TODO: get image from backend, or ask from user (can be rendered in-game on client side)
           style={{
             width: props.edge_length_px,
             height: props.edge_length_px,
@@ -175,11 +195,36 @@ function WorldMap(props: WorldMapProps): React.JSX.Element {
           size_px={10}
           map_dimensions={{
             map_element_edge_length_px: props.edge_length_px,
-            game_world_edge_length_meters: 3000, // TODO: get this from backend, or calculate based on the image asset?
+            game_world_edge_length_meters: world_size,
+            game_world_margin,
           }}
         />
       </div>
     </>
+  );
+}
+
+/**
+ * A pseudo element only invisibly rendered to determine the resolution of
+ * the game world map .PNG image. Returns the information to parent component
+ * via state hook passed in props. From this number we can derive the game world
+ * size.
+ */
+function PseudoMap(props: {
+  set_map_size: React.Dispatch<React.SetStateAction<number>>;
+  map_src: string;
+}): React.JSX.Element {
+  return (
+    <img
+      src={props.map_src}
+      style={{
+        visibility: "hidden",
+        position: "absolute",
+      }}
+      onLoad={(event) => {
+        props.set_map_size((event.target as any).height);
+      }}
+    ></img>
   );
 }
 
@@ -190,6 +235,7 @@ function App(): React.JSX.Element {
     sync_time_ms: 0,
     tcs: [],
   });
+  const [map_size_px, set_map_size_px] = React.useState<number>(NaN);
 
   React.useEffect(function connect() {
     const socket = new WebSocket("ws://rds-remote:1234");
@@ -212,10 +258,18 @@ function App(): React.JSX.Element {
     });
   }, []);
 
+  // TODO: get the map from some API?
+  const map_src = "./.local/map_4500_1337.png";
+
   return (
     <>
+      {Number.isNaN(map_size_px) && <PseudoMap map_src={map_src} set_map_size={set_map_size_px} />}
       <RCONView rcon_state={rcon_state} />
-      <WorldMap edge_length_px={750} markers={make_markers(rcon_state)} />
+      <WorldMap
+        edge_length_px={750}
+        markers={make_markers(rcon_state)}
+        original_rendered_map_edge_length_px={map_size_px}
+      />
     </>
   );
 }

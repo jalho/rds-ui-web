@@ -13,7 +13,8 @@ test.describe("map_coords_to_offsets", function () {
         },
         3000,
         100,
-        10
+        10,
+        1000,
       ),
       {
         left:
@@ -39,7 +40,8 @@ test.describe("map_coords_to_offsets", function () {
         },
         3000,
         100,
-        10
+        10,
+        1000,
       ),
       {
         left: 82.5,   // IDK this seems right, counting in RCON added margin...
