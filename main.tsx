@@ -236,27 +236,10 @@ function App(): React.JSX.Element {
     tcs: [],
   });
   const [map_size_px, set_map_size_px] = React.useState<number>(NaN);
-
-  React.useEffect(function connect() {
-    const socket = new WebSocket("ws://rds-remote:1234");
-
-    socket.addEventListener("close", function () {
-      // TODO!
-    });
-
-    socket.addEventListener("error", function () {
-      // TODO!
-    });
-
-    socket.addEventListener("message", function (message) {
-      const remote_state = JSON.parse(message.data);
-      set_rcon_state(remote_state);
-    });
-
-    socket.addEventListener("open", function () {
-      // TODO!
-    });
-  }, []);
+  const [rds_sync_api, set_rds_sync_api] = React.useState<{ addr: string; connected: boolean }>({
+    addr: "ws://rds-remote:1234",
+    connected: false,
+  });
 
   // TODO: get the map from some API?
   const map_src = "./.local/map_4500_1337.png";
@@ -264,6 +247,18 @@ function App(): React.JSX.Element {
   return (
     <>
       {Number.isNaN(map_size_px) && <PseudoMap map_src={map_src} set_map_size={set_map_size_px} />}
+      <input
+        type="text"
+        onChange={(e) => handle_input_rds_sync_api_addr(e, rds_sync_api, set_rds_sync_api)}
+        value={rds_sync_api.addr}
+      />
+      <button
+        disabled={rds_sync_api.connected}
+        onClick={() => handle_click_connect(rds_sync_api, set_rcon_state, set_rds_sync_api)}
+      >
+        Connect
+      </button>
+
       <RCONView rcon_state={rcon_state} />
       <WorldMap
         edge_length_px={750}
@@ -272,6 +267,56 @@ function App(): React.JSX.Element {
       />
     </>
   );
+}
+
+function handle_click_connect(
+  rds_sync_api: { addr: string; connected: boolean },
+  set_rcon_state: React.Dispatch<React.SetStateAction<RCON_State>>,
+  set_rds_sync_api: React.Dispatch<
+    React.SetStateAction<{
+      addr: string;
+      connected: boolean;
+    }>
+  >
+) {
+  const socket = new WebSocket(rds_sync_api.addr);
+
+  socket.addEventListener("close", function () {
+    set_rds_sync_api({
+      ...rds_sync_api,
+      connected: false,
+    });
+  });
+
+  socket.addEventListener("error", function () {
+    set_rds_sync_api({
+      ...rds_sync_api,
+      connected: false,
+    });
+  });
+
+  socket.addEventListener("message", function (message) {
+    const remote_state = JSON.parse(message.data);
+    set_rcon_state(remote_state);
+  });
+
+  socket.addEventListener("open", function () {
+    set_rds_sync_api({
+      ...rds_sync_api,
+      connected: true,
+    });
+  });
+}
+
+function handle_input_rds_sync_api_addr<Event extends { target: { value: string } }>(
+  event: Event,
+  state: { addr: string; connected: boolean },
+  set_state: React.Dispatch<React.SetStateAction<{ addr: string; connected: boolean }>>
+) {
+  set_state({
+    ...state,
+    addr: event.target.value,
+  });
 }
 
 function make_markers(rcon_state: RCON_State): { [id: ID]: MapEntity } {
