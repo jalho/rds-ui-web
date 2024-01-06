@@ -230,6 +230,10 @@ function PseudoMap(props: {
 
 type RDS_Sync_Api = { addr: string; websocket: WebSocket | null };
 
+function send_rcon_command(websocket: WebSocket): void {
+  websocket.send("env.time 9");
+}
+
 function App(): React.JSX.Element {
   const [rcon_state, set_rcon_state] = React.useState<RCON_State>({
     game_time: 0,
@@ -246,6 +250,11 @@ function App(): React.JSX.Element {
   // TODO: get the map from some API?
   const map_src = "./.local/map_4500_1337.png";
 
+  const socket_alias_for_typescript = rds_sync_api.websocket; // lol
+  const cmd_button = socket_alias_for_typescript === null
+    ? null
+    : <button onClick={() => send_rcon_command(socket_alias_for_typescript)}>Send command</button>;
+
   return (
     <>
       {Number.isNaN(map_size_px) && <PseudoMap map_src={map_src} set_map_size={set_map_size_px} />}
@@ -260,6 +269,7 @@ function App(): React.JSX.Element {
       >
         Connect
       </button>
+      {cmd_button}
 
       <RCONView rcon_state={rcon_state} />
       <WorldMap
