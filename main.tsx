@@ -228,6 +228,8 @@ function PseudoMap(props: {
   );
 }
 
+type RDS_Sync_Api = { addr: string; websocket: WebSocket | null };
+
 function App(): React.JSX.Element {
   const [rcon_state, set_rcon_state] = React.useState<RCON_State>({
     game_time: 0,
@@ -236,9 +238,9 @@ function App(): React.JSX.Element {
     tcs: [],
   });
   const [map_size_px, set_map_size_px] = React.useState<number>(NaN);
-  const [rds_sync_api, set_rds_sync_api] = React.useState<{ addr: string; connected: boolean }>({
+  const [rds_sync_api, set_rds_sync_api] = React.useState<RDS_Sync_Api>({
     addr: "ws://rds-remote:1234",
-    connected: false,
+    websocket: null,
   });
 
   // TODO: get the map from some API?
@@ -253,7 +255,7 @@ function App(): React.JSX.Element {
         value={rds_sync_api.addr}
       />
       <button
-        disabled={rds_sync_api.connected}
+        disabled={rds_sync_api.websocket?.readyState === 1}
         onClick={() => handle_click_connect(rds_sync_api, set_rcon_state, set_rds_sync_api)}
       >
         Connect
@@ -269,29 +271,24 @@ function App(): React.JSX.Element {
   );
 }
 
-function handle_click_connect(
-  rds_sync_api: { addr: string; connected: boolean },
+async function handle_click_connect(
+  rds_sync_api: RDS_Sync_Api,
   set_rcon_state: React.Dispatch<React.SetStateAction<RCON_State>>,
-  set_rds_sync_api: React.Dispatch<
-    React.SetStateAction<{
-      addr: string;
-      connected: boolean;
-    }>
-  >
-) {
+  set_rds_sync_api: React.Dispatch<React.SetStateAction<RDS_Sync_Api>>
+): Promise<void> {
   const socket = new WebSocket(rds_sync_api.addr);
 
   socket.addEventListener("close", function () {
     set_rds_sync_api({
       ...rds_sync_api,
-      connected: false,
+      websocket: null,
     });
   });
 
   socket.addEventListener("error", function () {
     set_rds_sync_api({
       ...rds_sync_api,
-      connected: false,
+      websocket: null,
     });
   });
 
@@ -303,15 +300,15 @@ function handle_click_connect(
   socket.addEventListener("open", function () {
     set_rds_sync_api({
       ...rds_sync_api,
-      connected: true,
+      websocket: socket,
     });
   });
 }
 
 function handle_input_rds_sync_api_addr<Event extends { target: { value: string } }>(
   event: Event,
-  state: { addr: string; connected: boolean },
-  set_state: React.Dispatch<React.SetStateAction<{ addr: string; connected: boolean }>>
+  state: RDS_Sync_Api,
+  set_state: React.Dispatch<React.SetStateAction<RDS_Sync_Api>>
 ) {
   set_state({
     ...state,
