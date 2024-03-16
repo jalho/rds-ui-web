@@ -239,7 +239,7 @@ function PseudoMap(props: {
 type RDS_Sync_Api = { addr: string; websocket: WebSocket | null };
 
 function send_rcon_command(websocket: WebSocket): void {
-  websocket.send("env.time 9");
+  // websocket.send("env.time 9");
 }
 
 function App(): React.JSX.Element {
