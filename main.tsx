@@ -168,6 +168,7 @@ type WorldMapProps = {
    * command `rendermap`).
    */
   original_rendered_map_edge_length_px: number;
+  map_image_src: string;
 };
 function WorldMap(props: WorldMapProps): React.JSX.Element {
   /**
@@ -183,7 +184,7 @@ function WorldMap(props: WorldMapProps): React.JSX.Element {
       <p>world_size: {world_size} (deduced)</p>
       <div style={{ position: "relative" }}>
         <img
-          src="./.local/map_4500_1337.png" // TODO: get image from backend, or ask from user (can be rendered in-game on client side)
+          src={props.map_image_src}
           style={{
             width: props.edge_length_px,
             height: props.edge_length_px,
@@ -243,12 +244,12 @@ function App(): React.JSX.Element {
   });
   const [map_size_px, set_map_size_px] = React.useState<number>(NaN);
   const [rds_sync_api, set_rds_sync_api] = React.useState<RDS_Sync_Api>({
-    addr: "ws://rds-remote:1234",
+    addr: "ws://localhost:8080",
     websocket: null,
   });
 
-  // TODO: get the map from some API?
-  const map_src = "./.local/map.png";
+  // TODO: get the map from some API or as user input?
+  const map_src = "./map.png";
 
   const socket_alias_for_typescript = rds_sync_api.websocket; // lol
   const cmd_button = socket_alias_for_typescript === null
@@ -276,6 +277,7 @@ function App(): React.JSX.Element {
         edge_length_px={750}
         markers={make_markers(rcon_state)}
         original_rendered_map_edge_length_px={map_size_px}
+        map_image_src={map_src}
       />
     </>
   );
