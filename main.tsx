@@ -31,11 +31,18 @@ type RCON_State = {
 };
 
 function RCONView(props: { rcon_state: RCON_State }): React.JSX.Element {
+  let game_time_hours: number | string, game_time_minutes: number | string;
+
+  game_time_hours = Math.floor(props.rcon_state.game_time);
+  game_time_minutes = Math.floor((props.rcon_state.game_time - game_time_hours) * 60);
+  game_time_hours = game_time_hours.toString().padStart(2, "0");
+  game_time_minutes = game_time_minutes.toString().padStart(2, "0");
+
   return (
     <div>
       <ul>
-        <li>Synced: {props.rcon_state.sync_time_ms}</li>
-        <li>Game time: {props.rcon_state.game_time}</li>
+        <li>Synced: {new Date(props.rcon_state.sync_time_ms).toLocaleTimeString()}</li>
+        <li>Game time: {game_time_hours}:{game_time_minutes}</li>
         <li>Players: {props.rcon_state.players.length}</li>
         <li>TCs: {props.rcon_state.tcs.length}</li>
       </ul>
