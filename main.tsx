@@ -248,7 +248,7 @@ function App(): React.JSX.Element {
   });
 
   // TODO: get the map from some API?
-  const map_src = "./.local/map_4500_1337.png";
+  const map_src = "./.local/map.png";
 
   const socket_alias_for_typescript = rds_sync_api.websocket; // lol
   const cmd_button = socket_alias_for_typescript === null
