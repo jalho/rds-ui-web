@@ -75,8 +75,6 @@ function Markers(props: {
   };
 }): React.JSX.Element[] {
   const elements = Object.values(props.data).map(function (entity) {
-    const [tooltip_open, set_tooltip_open] = React.useState<boolean>(false);
-
     const offsets = map_coords_to_offsets(
       entity.position,
       props.map_dimensions.game_world_edge_length_meters,
@@ -85,8 +83,14 @@ function Markers(props: {
       props.map_dimensions.game_world_margin
     );
 
-    const tooltip =
-      entity.discriminator === "player" ? <PlayerTooltip entity={entity} /> : <TCTooltip entity={entity} />;
+    const tooltip = entity.discriminator === "player"
+      ? <PlayerTooltip entity={entity} />
+      // : <TCTooltip entity={entity} />;
+      : <></>;
+
+    const color = entity.discriminator === "player"
+      ? "red"
+      : "blue";
 
     return (
       <div
@@ -99,20 +103,14 @@ function Markers(props: {
       >
         <div
           style={{
-            backgroundColor: "red",
+            backgroundColor: color,
             width: props.size_px,
             height: props.size_px,
             borderRadius: "50%",
             opacity: "70%",
           }}
-          onMouseEnter={function (event) {
-            if (!tooltip_open) set_tooltip_open(true);
-          }}
-          onMouseLeave={function (event) {
-            if (tooltip_open) set_tooltip_open(false);
-          }}
         />
-        {tooltip_open && tooltip}
+        {tooltip}
       </div>
     );
   });
@@ -148,18 +146,19 @@ function PlayerTooltip(props: { entity: RCON_Player }): React.JSX.Element {
         flexDirection: "column",
         backgroundColor: "black",
         color: "white",
+        padding: "2px",
+        borderRadius: "25%",
+        opacity: "75%",
       }}
     >
-      <span>
-        Player <code>{props.entity.display_name}</code>
-      </span>
-      <span>Steam ID: {props.entity.id}</span>
+      <span>{props.entity.display_name}</span>
+      {/* <span>Steam ID: {props.entity.id}</span>
       <span>
         Position: {props.entity.position.x},{props.entity.position.z},{props.entity.position.y}
       </span>
       <span>Health: {props.entity.health}</span>
       <span>Address: {props.entity.address}</span>
-      <span>Connected: {props.entity.connected_seconds} sec</span>
+      <span>Connected: {props.entity.connected_seconds} sec</span> */}
     </div>
   );
 }
@@ -339,11 +338,10 @@ function make_markers(rcon_state: RCON_State): { [id: ID]: MapEntity } {
   const map: { [id: ID]: MapEntity } = {};
 
   // TODO: get as a hash map from backend instead!
-  for (const player of rcon_state.players)
-    map[player.id] = Object.assign(player, { discriminator: "player" } satisfies Discriminated<"player">);
-
   for (const tc of rcon_state.tcs)
     map[tc.id] = Object.assign(tc, { discriminator: "tc" } satisfies Discriminated<"tc">);
+  for (const player of rcon_state.players)
+    map[player.id] = Object.assign(player, { discriminator: "player" } satisfies Discriminated<"player">);
 
   return map;
 }
