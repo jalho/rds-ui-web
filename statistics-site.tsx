@@ -64,6 +64,9 @@ function handle_message_stats(event: MessageEvent) {
 }
 
 function App(): React.JSX.Element {
+  // TODO: Current setup closes socket after 1 minute of no traffic (Nginx TCP
+  // socket timeout) -- Fix by pinging regularly? (Assuming the Go server
+  // responds with pongs...)
   const websocket = new WebSocket("/sock/stats");
   websocket.addEventListener("message", handle_message_stats);
   websocket.addEventListener("close", console.log);
