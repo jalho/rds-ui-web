@@ -50,7 +50,7 @@ type MessageStatsInit = Record<
   string, // 17-digit Steam ID of a player
   Record<
     string, // farm object, e.g. "wood"
-    { Quantity: number; Timestamp_unix_ms_init: number; Timestamp_unix_ms_latest: number }
+    { Quantity: number; Timestamp_unix_sec_init: number; Timestamp_unix_sec_latest: number }
   >
 >;
 
