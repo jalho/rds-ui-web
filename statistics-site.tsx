@@ -28,7 +28,7 @@ type MessageStatsIncrement = {
    */
   category: number;
   /**
-   * Unix timestamp (in milliseconds) of when the event occurred.
+   * Unix timestamp (in seconds) of when the event occurred.
    */
   timestamp: number;
   /**
