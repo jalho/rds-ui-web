@@ -63,18 +63,58 @@ function handle_message_stats(event: MessageEvent) {
   }
 }
 
+enum WebSocketState {
+    CONNECTING = 0,
+    OPEN = 1,
+    CLOSING = 2,
+    CLOSED = 3,
+}
+
+type ConnectionState = { socket_ref: WebSocket | null, socket_state: WebSocketState };
+
+function ContainConnectedWs(props: Record<"view_connected" | "view_disconnected", React.JSX.Element>): React.JSX.Element {
+  const [connection_state, set_connection_state] = React.useState<ConnectionState>({
+    socket_ref: null,
+    socket_state: WebSocketState.CLOSED
+  });
+
+  React.useEffect(function connect_websocket() {
+    console.debug("Connection state changed! State is now: %s", WebSocketState[connection_state.socket_state]);
+    if (connection_state.socket_state > WebSocketState.OPEN) {
+      const websocket = new WebSocket("/sock/stats");
+      websocket.addEventListener("open", function store_ref() {
+        set_connection_state({ ...connection_state, socket_state: websocket.readyState });
+      });
+      websocket.addEventListener("close", function remove_ref() {
+        set_connection_state({ socket_ref: null, socket_state: websocket.readyState });
+      });
+    }
+  }, [connection_state.socket_state]);
+
+  switch (connection_state.socket_state) {
+    case WebSocketState.OPEN: {
+      return props.view_connected;
+    }
+    case WebSocketState.CONNECTING:
+    case WebSocketState.CLOSING:
+    case WebSocketState.CLOSED:
+    default: {
+      return props.view_disconnected;
+    }
+  }
+}
+
+function ViewConnected(): React.JSX.Element {
+  // TODO: Send "init" message over the WebSocket to receive initial state update!
+  // TODO: Receive incremental state updates after initial state!
+  return <>Connected</>;
+}
+
 function App(): React.JSX.Element {
   // TODO: Current setup closes socket after 1 minute of no traffic (Nginx TCP
   // socket timeout) -- Fix by pinging regularly? (Assuming the Go server
   // responds with pongs...)
-  const websocket = new WebSocket("/sock/stats");
-  websocket.addEventListener("message", handle_message_stats);
-  websocket.addEventListener("close", console.log);
-  websocket.addEventListener("open", (asd) => {
-    console.log(asd);
-    websocket.send("init");
-  });
-  return <>Reindeerland</>;
+  return <ContainConnectedWs view_connected={<ViewConnected />} view_disconnected={<>Diconnected</>} />;
 }
 
 const root_node = document.getElementById("root");
