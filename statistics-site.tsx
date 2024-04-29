@@ -54,15 +54,6 @@ type MessageStatsInit = Record<
   >
 >;
 
-function handle_message_stats(event: MessageEvent) {
-  const message: MessageStatsInit | MessageStatsIncrement = JSON.parse(event.data);
-  if ("category" in message) {
-    console.debug("Got a stats increment message!", message);
-  } else {
-    console.debug("Got a stats init message!", message);
-  }
-}
-
 enum WebSocketState {
     CONNECTING = 0,
     OPEN = 1,
@@ -72,7 +63,10 @@ enum WebSocketState {
 
 type ConnectionState = { socket_ref: WebSocket | null, socket_state: WebSocketState };
 
-function ContainConnectedWs(props: Record<"view_connected" | "view_disconnected", React.JSX.Element>): React.JSX.Element {
+function ContainConnectedWs(props: {
+  view_connected: (websocket: WebSocket) => React.JSX.Element,
+  view_disconnected: React.JSX.Element,
+}): React.JSX.Element {
   const [connection_state, set_connection_state] = React.useState<ConnectionState>({
     socket_ref: null,
     socket_state: WebSocketState.CLOSED
@@ -83,7 +77,7 @@ function ContainConnectedWs(props: Record<"view_connected" | "view_disconnected"
     if (connection_state.socket_state > WebSocketState.OPEN) {
       const websocket = new WebSocket("/sock/stats");
       websocket.addEventListener("open", function store_ref() {
-        set_connection_state({ ...connection_state, socket_state: websocket.readyState });
+        set_connection_state({ socket_ref: websocket, socket_state: websocket.readyState });
       });
       websocket.addEventListener("close", function remove_ref() {
         set_connection_state({ socket_ref: null, socket_state: websocket.readyState });
@@ -93,7 +87,7 @@ function ContainConnectedWs(props: Record<"view_connected" | "view_disconnected"
 
   switch (connection_state.socket_state) {
     case WebSocketState.OPEN: {
-      return props.view_connected;
+      return props.view_connected(connection_state.socket_ref as WebSocket);
     }
     case WebSocketState.CONNECTING:
     case WebSocketState.CLOSING:
@@ -104,17 +98,31 @@ function ContainConnectedWs(props: Record<"view_connected" | "view_disconnected"
   }
 }
 
-function ViewConnected(): React.JSX.Element {
-  // TODO: Send "init" message over the WebSocket to receive initial state update!
-  // TODO: Receive incremental state updates after initial state!
-  return <>Connected</>;
+function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
+  const [data_state, set_data_state] = React.useState<unknown>(null);
+
+  React.useEffect(function get_initial_data_state() {
+    props.websocket.addEventListener("message", function initialize(event) {
+      const message: MessageStatsInit | MessageStatsIncrement = JSON.parse(event.data);
+      if ("category" in message) {
+        console.debug("Got a stats increment message!", message);
+        // TODO: Apply incremental state updates after initial state!
+      } else {
+        console.debug("Got a stats init message!", message);
+        set_data_state(event.data);
+      }
+    });
+    props.websocket.send("init");
+  }, []);
+
+  return <>Connected -- data_state: {data_state}</>;
 }
 
 function App(): React.JSX.Element {
   // TODO: Current setup closes socket after 1 minute of no traffic (Nginx TCP
   // socket timeout) -- Fix by pinging regularly? (Assuming the Go server
   // responds with pongs...)
-  return <ContainConnectedWs view_connected={<ViewConnected />} view_disconnected={<>Diconnected</>} />;
+  return <ContainConnectedWs view_connected={(websocket) => <ViewConnected websocket={websocket} />} view_disconnected={<>Diconnected</>} />;
 }
 
 const root_node = document.getElementById("root");
