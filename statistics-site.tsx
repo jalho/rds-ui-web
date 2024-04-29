@@ -61,26 +61,51 @@ enum WebSocketState {
     CLOSED = 3,
 }
 
-type ConnectionState = { socket_ref: WebSocket | null, socket_state: WebSocketState };
+type ConnectionState = {
+  socket_ref: WebSocket | null;
+  socket_state: WebSocketState;
+  interval_keepalive: number | null;
+};
 
+/**
+ * Manage WebSocket connection and render accordingly.
+ */
 function ContainConnectedWs(props: {
   view_connected: (websocket: WebSocket) => React.JSX.Element,
   view_disconnected: React.JSX.Element,
 }): React.JSX.Element {
   const [connection_state, set_connection_state] = React.useState<ConnectionState>({
     socket_ref: null,
-    socket_state: WebSocketState.CLOSED
+    socket_state: WebSocketState.CLOSED,
+    interval_keepalive: null,
   });
 
+  /*
+   * Connect when disconnected.
+   */
   React.useEffect(function connect_websocket() {
     console.debug("Connection state changed! State is now: %s", WebSocketState[connection_state.socket_state]);
     if (connection_state.socket_state > WebSocketState.OPEN) {
       const websocket = new WebSocket("/sock/stats");
       websocket.addEventListener("open", function store_ref() {
-        set_connection_state({ socket_ref: websocket, socket_state: websocket.readyState });
+        /*
+         * Send keepalive probes to keep proxied WebSocket connection open.
+         * Nginx closes the tunnel after 1 minute of no traffic, and I tend to
+         * deploy stuff behind Nginx.
+         */
+        const interval_keepalive = setInterval(function probe_keepalive() {
+          /*
+           * Actual ping (as in WebSocket protocol) is not implemented in
+           * browsers... But that's fine because any traffic over TCP will
+           * suffice for our purposes!
+           */
+          websocket.send("not ping");
+        }, 30000) as any;
+        set_connection_state({ socket_ref: websocket, socket_state: websocket.readyState, interval_keepalive });
       });
       websocket.addEventListener("close", function remove_ref() {
-        set_connection_state({ socket_ref: null, socket_state: websocket.readyState });
+        if (connection_state.interval_keepalive) clearInterval(connection_state.interval_keepalive);
+        set_connection_state({ socket_ref: null, socket_state: websocket.readyState, interval_keepalive: null });
       });
     }
   }, [connection_state.socket_state]);
@@ -119,9 +144,6 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
 }
 
 function App(): React.JSX.Element {
-  // TODO: Current setup closes socket after 1 minute of no traffic (Nginx TCP
-  // socket timeout) -- Fix by pinging regularly? (Assuming the Go server
-  // responds with pongs...)
   return <ContainConnectedWs view_connected={(websocket) => <ViewConnected websocket={websocket} />} view_disconnected={<>Diconnected</>} />;
 }
 
