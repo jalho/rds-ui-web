@@ -4,6 +4,11 @@
     body {
         background-color: black;
         color: white;
+        font-size: large;
+    }
+
+    section {
+        padding: 1rem;
     }
 
     .list-filter-controls {
@@ -13,35 +18,55 @@
         gap: 1rem;
         justify-content: center;
         padding: 0.5rem;
-        width: 22rem;
+        width: 35rem;
+    }
+
+    .horizontal {
+        display: flex;
+        flex-direction: row;
+        padding: 1rem;
+        max-width: 10rem;
+    }
+
+    .vertical {
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
     }
 
     .list-filter-controls>input {
         width: 8rem;
     }
 
-    .stats-list>.object:nth-child(odd) {
-        background-color: rgba(67, 89, 133);
+    .stats-list>.object {
+        width: 35rem;
         padding: 0.5rem;
-        width: 22rem;
+    }
+
+    .stats-list>.player {
+        width: 35rem;
+        padding: 0.5rem;
+    }
+
+    .stats-list>.object:nth-child(odd) {
+        background-color: rgba(67, 89, 133, 0.45);
     }
 
     .stats-list>.object:nth-child(even) {
-        background-color: rgba(49, 67, 116);
-        padding: 0.5rem;
-        width: 22rem;
+        background-color: rgba(49, 67, 116, 0.45);
     }
 
     .stats-list>.player:nth-child(odd) {
-        background-color: rgba(67, 89, 133);
-        padding: 0.5rem;
-        width: 22rem;
+        background-color: rgba(67, 89, 133, 0.45);
     }
 
     .stats-list>.player:nth-child(even) {
-        background-color: rgba(49, 67, 116);
-        padding: 0.5rem;
-        width: 22rem;
+        background-color: rgba(49, 67, 116, 0.45);
+    }
+
+    .significant-value {
+        color: rgba(178, 229, 255);
+        font-size: larger;
     }
 </style>
 

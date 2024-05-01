@@ -200,8 +200,21 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
 
   return (
     <>
-      <ObjectList data={data_state} />
-      <PlayerList data={data_state} />
+      <section>
+        <h1>Some real time stats</h1>
+        <p>These stats should update in real time without having to reload the page.</p>
+        <p>
+          The stats are not written to disk, but are instead only kept in memory. The process will restart and thus wipe
+          the stats upon the regular (weekly) map wipes.
+        </p>
+      </section>
+
+      <section>
+        <div className="horizontal">
+          <ObjectList data={data_state} />
+          <PlayerList data={data_state} />
+        </div>
+      </section>
     </>
   );
 }
@@ -239,8 +252,13 @@ function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
   }
 
   return (
-    <>
+    <div className="vertical">
       <h1>Players per object</h1>
+
+      <p>
+        Each collected object in alphabetical order, and for each object its collecting players by quantity in
+        descending order.
+      </p>
 
       <div className="list-filter-controls">
         <label htmlFor="filter_per_objectid">Filter per object ID:</label>
@@ -264,7 +282,7 @@ function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
                 {player_toplist.map((item) => {
                   return (
                     <li key={item.player_id}>
-                      <PlayerPlacard player_id={item.player_id} />: {item.quantity}
+                      <PlayerPlacard player_id={item.player_id} />: <code className="significant-value">{item.quantity}</code>
                     </li>
                   );
                 })}
@@ -273,7 +291,7 @@ function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
           );
         })}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -287,9 +305,9 @@ function PlayerList(props: { data: MessageStatsInit }): React.JSX.Element {
   }
 
   return (
-    <>
+    <div className="vertical">
       <h1>Objects per player</h1>
-
+      <p>Each player's collected objects sorted by quantity in descending order.</p>
       <div className="list-filter-controls">
         <label htmlFor="filter_per_player_steamid">Filter per player Steam ID:</label>
         <input
@@ -302,7 +320,6 @@ function PlayerList(props: { data: MessageStatsInit }): React.JSX.Element {
           }}
         />
       </div>
-
       <div className="stats-list">
         {players.map(function make_player_stats([subject_id, stats]) {
           return (
@@ -312,7 +329,7 @@ function PlayerList(props: { data: MessageStatsInit }): React.JSX.Element {
           );
         })}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -354,9 +371,14 @@ function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: stri
 }
 
 function ObjectStats(props: { stats: MessageStatsInit[string][string]; object_id: string }): React.JSX.Element {
+  const timestamp_localized: string = new Date(props.stats.Timestamp_unix_sec_latest * 1000).toLocaleString(undefined, {
+    dateStyle: "short",
+    timeStyle: "medium",
+  });
   return (
     <>
-      <ObjectPlacard object_id={props.object_id} />: <code>{props.stats.Quantity}</code>
+      <ObjectPlacard object_id={props.object_id} />: <code className="significant-value">{props.stats.Quantity}</code>{" "}
+      at {timestamp_localized}
     </>
   );
 }
