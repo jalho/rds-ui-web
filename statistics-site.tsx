@@ -229,10 +229,33 @@ function get_players_per_object_sorted(players_data: MessageStatsInit) {
 
 function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
   const players_per_object_sorted = get_players_per_object_sorted(props.data);
+
+  const [filter, set_filter] = React.useState<string>("");
+  let objects = Object.entries(players_per_object_sorted);
+  if (filter.length > 0) {
+    objects = objects.filter(function apply_filter([object_id]) {
+      return object_id.includes(filter);
+    });
+  }
+
   return (
     <>
       <h1>Players per object</h1>
-      {Object.entries(players_per_object_sorted).map(function make_object_toplist([object_id, player_toplist]) {
+
+      <div>
+        <label htmlFor="filter_per_objectid">Filter per object ID:</label>
+        <input
+          type="text"
+          id="filter_per_objectid"
+          name="filter_per_objectid"
+          value={filter}
+          onChange={function handle_change(event) {
+            set_filter(event.target.value);
+          }}
+        />
+      </div>
+
+      {objects.map(function make_object_toplist([object_id, player_toplist]) {
         return (
           <div key={object_id}>
             <ObjectPlacard object_id={object_id} />
