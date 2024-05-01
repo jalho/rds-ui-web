@@ -33,10 +33,10 @@ function use_websocket_message(websocket: WebSocket): MessageStatsInit | Message
   React.useEffect(() => {
     websocket.addEventListener("message", function handle_message(event) {
       set_message(JSON.parse(event.data));
-    })
+    });
   }, []);
   return message;
-};
+}
 
 type MessageStatsIncrement = {
   /**
@@ -72,10 +72,10 @@ type MessageStatsInit = Record<
 >;
 
 enum WebSocketState {
-    CONNECTING = 0,
-    OPEN = 1,
-    CLOSING = 2,
-    CLOSED = 3,
+  CONNECTING = 0,
+  OPEN = 1,
+  CLOSING = 2,
+  CLOSED = 3,
 }
 
 type ConnectionState = {
@@ -88,8 +88,8 @@ type ConnectionState = {
  * Manage WebSocket connection and render accordingly.
  */
 function ContainConnectedWs(props: {
-  view_connected: (websocket: WebSocket) => React.JSX.Element,
-  view_disconnected: React.JSX.Element,
+  view_connected: (websocket: WebSocket) => React.JSX.Element;
+  view_disconnected: React.JSX.Element;
 }): React.JSX.Element {
   const [connection_state, set_connection_state] = React.useState<ConnectionState>({
     socket_ref: null,
@@ -100,32 +100,35 @@ function ContainConnectedWs(props: {
   /*
    * Connect when disconnected.
    */
-  React.useEffect(function connect_websocket() {
-    console.debug("Connection state changed! State is now: %s", WebSocketState[connection_state.socket_state]);
-    if (connection_state.socket_state > WebSocketState.OPEN) {
-      const websocket = new WebSocket("/sock/stats");
-      websocket.addEventListener("open", function store_ref() {
-        /*
-         * Send keepalive probes to keep proxied WebSocket connection open.
-         * Nginx closes the tunnel after 1 minute of no traffic, and I tend to
-         * deploy stuff behind Nginx.
-         */
-        const interval_keepalive = setInterval(function probe_keepalive() {
+  React.useEffect(
+    function connect_websocket() {
+      console.debug("Connection state changed! State is now: %s", WebSocketState[connection_state.socket_state]);
+      if (connection_state.socket_state > WebSocketState.OPEN) {
+        const websocket = new WebSocket("/sock/stats");
+        websocket.addEventListener("open", function store_ref() {
           /*
-           * Actual ping (as in WebSocket protocol) is not implemented in
-           * browsers... But that's fine because any traffic over TCP will
-           * suffice for our purposes!
+           * Send keepalive probes to keep proxied WebSocket connection open.
+           * Nginx closes the tunnel after 1 minute of no traffic, and I tend to
+           * deploy stuff behind Nginx.
            */
-          websocket.send("not ping");
-        }, 30000) as any;
-        set_connection_state({ socket_ref: websocket, socket_state: websocket.readyState, interval_keepalive });
-      });
-      websocket.addEventListener("close", function remove_ref() {
-        if (connection_state.interval_keepalive) clearInterval(connection_state.interval_keepalive);
-        set_connection_state({ socket_ref: null, socket_state: websocket.readyState, interval_keepalive: null });
-      });
-    }
-  }, [connection_state.socket_state]);
+          const interval_keepalive = setInterval(function probe_keepalive() {
+            /*
+             * Actual ping (as in WebSocket protocol) is not implemented in
+             * browsers... But that's fine because any traffic over TCP will
+             * suffice for our purposes!
+             */
+            websocket.send("not ping");
+          }, 30000) as any;
+          set_connection_state({ socket_ref: websocket, socket_state: websocket.readyState, interval_keepalive });
+        });
+        websocket.addEventListener("close", function remove_ref() {
+          if (connection_state.interval_keepalive) clearInterval(connection_state.interval_keepalive);
+          set_connection_state({ socket_ref: null, socket_state: websocket.readyState, interval_keepalive: null });
+        });
+      }
+    },
+    [connection_state.socket_state]
+  );
 
   switch (connection_state.socket_state) {
     case WebSocketState.OPEN: {
@@ -144,10 +147,10 @@ function is_MessageStatsIncrement(n: MessageStatsInit | MessageStatsIncrement): 
   return "category" in n;
 }
 
-function updateNestedField(obj: any, lens_path: any, value: any) {
-  const lens = ramda.lensPath(lens_path);
-  const updatedObj = ramda.set(lens, value, obj);
-  return updatedObj;
+function update_or_init_nested_property<T, V>(obj: T, ramda_lens_path: ramda.Path, value_assignable: V) {
+  const lens = ramda.lensPath(ramda_lens_path);
+  const obj_updated = ramda.set(lens, value_assignable, obj);
+  return obj_updated;
 }
 
 function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
@@ -159,24 +162,38 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
     props.websocket.send("init");
   }, []);
 
-  React.useEffect(function increment_data_state() {
-    // initialize state
-    if (!is_MessageStatsIncrement(message)) {
-      set_data_state(message);
-    }
+  React.useEffect(
+    function increment_data_state() {
+      // initialize state
+      if (!is_MessageStatsIncrement(message)) {
+        set_data_state(message);
+      }
 
-    // increment state
-    else {
-      const old_quantity = data_state[message.id_subject]?.[message.id_object]?.Quantity ?? 0;
-      set_data_state(updateNestedField(data_state, [message.id_subject, message.id_object, "Quantity"], old_quantity + message.quantity));
-    }
-  }, [message]);
+      // increment state
+      else {
+        const old_quantity = data_state[message.id_subject]?.[message.id_object]?.Quantity ?? 0;
+        set_data_state(
+          update_or_init_nested_property(
+            data_state,
+            [message.id_subject, message.id_object, "Quantity"],
+            old_quantity + message.quantity
+          )
+        );
+      }
+    },
+    [message]
+  );
 
   return <code>{JSON.stringify(data_state, null, 2)}</code>;
 }
 
 function App(): React.JSX.Element {
-  return <ContainConnectedWs view_connected={(websocket) => <ViewConnected websocket={websocket} />} view_disconnected={<>Diconnected</>} />;
+  return (
+    <ContainConnectedWs
+      view_connected={(websocket) => <ViewConnected websocket={websocket} />}
+      view_disconnected={<>Diconnected</>}
+    />
+  );
 }
 
 const root_node = document.getElementById("root");
