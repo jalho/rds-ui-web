@@ -2,6 +2,12 @@
 
 # Cheatsheet
 
+## Serve with esbuild
+
+```
+node_modules/typescript/bin/tsc && node_modules/esbuild/bin/esbuild statistics-site.tsx --bundle --outfile=bundle.js --bundle --servedir=$(pwd) --watch
+```
+
 ## Build
 
 ```
