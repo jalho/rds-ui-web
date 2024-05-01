@@ -167,7 +167,7 @@ function update_or_init_nested_property<T, V>(obj: T, ramda_lens_path: ramda.Pat
   return obj_updated;
 }
 
-function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element[] {
+function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
   const [data_state, set_data_state] = React.useState<MessageStatsInit>({});
   const message: MessageStatsInit | MessageStatsIncrement = use_websocket_message(props.websocket);
 
@@ -198,17 +198,52 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element[] {
     [message]
   );
 
-  return Object.entries(data_state).map(function make_player_stats([subject_id, stats]) {
-    return <SubjectStats key={subject_id} subject_id={subject_id} stats={stats} />
-  });
+  return (
+    <>
+      <ObjectList data={data_state} />
+      <PlayerList data={data_state} />
+    </>
+  );
+}
+
+function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
+  return <>TODO: Top-5 lists of each resource here...</>;
+}
+
+function PlayerList(props: { data: MessageStatsInit }): React.JSX.Element {
+  return (
+    <>
+      {Object.entries(props.data).map(function make_player_stats([subject_id, stats]) {
+        return <SubjectStats key={subject_id} subject_id={subject_id} stats={stats} />;
+      })}
+    </>
+  );
+}
+
+function PlayerPlacard(props: { player_id: string }): React.JSX.Element {
+  // TODO: use some metadata fetcher HOC and view player display name etc.
+  return (
+    <h1>
+      Steam ID: <code>{props.player_id}</code>
+    </h1>
+  );
+}
+
+function ObjectPlacard(props: { object_id: string }): React.JSX.Element {
+  // TODO: use some decoration fetcher HOC and view resource thumbnail image or something
+  return (
+    <h2>
+      object ID: <code>{trim_object_id(props.object_id)}</code> (trimmed)
+    </h2>
+  );
 }
 
 function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: string }): React.JSX.Element {
   return (
     <div>
-      <h1>{props.subject_id}</h1>
+      <PlayerPlacard player_id={props.subject_id} />
       {Object.entries(props.stats).map(function make_object_stats([object_id, stats]) {
-        return <ObjectStats key={object_id} object_id={object_id} stats={stats} />
+        return <ObjectStats key={object_id} object_id={object_id} stats={stats} />;
       })}
     </div>
   );
@@ -217,7 +252,7 @@ function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: stri
 function ObjectStats(props: { stats: MessageStatsInit[string][string]; object_id: string }): React.JSX.Element {
   return (
     <div>
-      <h2>{trim_object_id(props.object_id)}</h2>
+      <ObjectPlacard object_id={props.object_id} />
       <code>{props.stats.Quantity}</code>
     </div>
   );
