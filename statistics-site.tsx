@@ -85,6 +85,20 @@ type ConnectionState = {
 };
 
 /**
+ * For example:
+ * `"assets/bundled/prefabs/autospawn/collectable/hemp/hemp-collectable.prefab"`
+ *  -> `"hemp-collectable.prefab"`
+ */
+function trim_object_id(id: string): string {
+  const slash_idx = id.lastIndexOf("/");
+  if (slash_idx < 0) {
+    return id;
+  } else {
+    return id.substring(slash_idx + 1);
+  }
+}
+
+/**
  * Manage WebSocket connection and render accordingly.
  */
 function ContainConnectedWs(props: {
@@ -153,7 +167,7 @@ function update_or_init_nested_property<T, V>(obj: T, ramda_lens_path: ramda.Pat
   return obj_updated;
 }
 
-function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
+function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element[] {
   const [data_state, set_data_state] = React.useState<MessageStatsInit>({});
   const message: MessageStatsInit | MessageStatsIncrement = use_websocket_message(props.websocket);
 
@@ -184,7 +198,29 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
     [message]
   );
 
-  return <code>{JSON.stringify(data_state, null, 2)}</code>;
+  return Object.entries(data_state).map(function make_player_stats([subject_id, stats]) {
+    return <SubjectStats key={subject_id} subject_id={subject_id} stats={stats} />
+  });
+}
+
+function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: string }): React.JSX.Element {
+  return (
+    <div>
+      <h1>{props.subject_id}</h1>
+      {Object.entries(props.stats).map(function make_object_stats([object_id, stats]) {
+        return <ObjectStats key={object_id} object_id={object_id} stats={stats} />
+      })}
+    </div>
+  );
+}
+
+function ObjectStats(props: { stats: MessageStatsInit[string][string]; object_id: string }): React.JSX.Element {
+  return (
+    <div>
+      <h2>{trim_object_id(props.object_id)}</h2>
+      <code>{props.stats.Quantity}</code>
+    </div>
+  );
 }
 
 function App(): React.JSX.Element {
