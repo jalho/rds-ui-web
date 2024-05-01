@@ -26,6 +26,17 @@ scp bundle.js rust:/var/www/html/ && scp index.html rust:/var/www/html/
 
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
+import * as ramda from "ramda";
+
+function use_websocket_message(websocket: WebSocket): MessageStatsInit | MessageStatsIncrement {
+  const [message, set_message] = React.useState<MessageStatsInit | MessageStatsIncrement>({});
+  React.useEffect(() => {
+    websocket.addEventListener("message", function handle_message(event) {
+      set_message(JSON.parse(event.data));
+    })
+  }, []);
+  return message;
+};
 
 type MessageStatsIncrement = {
   /**
@@ -129,24 +140,39 @@ function ContainConnectedWs(props: {
   }
 }
 
-function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
-  const [data_state, set_data_state] = React.useState<unknown>(null);
+function is_MessageStatsIncrement(n: MessageStatsInit | MessageStatsIncrement): n is MessageStatsIncrement {
+  return "category" in n;
+}
 
-  React.useEffect(function get_initial_data_state() {
-    props.websocket.addEventListener("message", function initialize(event) {
-      const message: MessageStatsInit | MessageStatsIncrement = JSON.parse(event.data);
-      if ("category" in message) {
-        console.debug("Got a stats increment message!", message);
-        // TODO: Apply incremental state updates after initial state!
-      } else {
-        console.debug("Got a stats init message!", message);
-        set_data_state(event.data);
-      }
-    });
+function updateNestedField(obj: any, lens_path: any, value: any) {
+  const lens = ramda.lensPath(lens_path);
+  const updatedObj = ramda.set(lens, value, obj);
+  return updatedObj;
+}
+
+function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
+  const [data_state, set_data_state] = React.useState<MessageStatsInit>({});
+  const message: MessageStatsInit | MessageStatsIncrement = use_websocket_message(props.websocket);
+
+  // request for inital state
+  React.useEffect(function request_initial_state() {
     props.websocket.send("init");
   }, []);
 
-  return <>Connected -- data_state: {data_state}</>;
+  React.useEffect(function increment_data_state() {
+    // initialize state
+    if (!is_MessageStatsIncrement(message)) {
+      set_data_state(message);
+    }
+
+    // increment state
+    else {
+      const old_quantity = data_state[message.id_subject]?.[message.id_object]?.Quantity ?? 0;
+      set_data_state(updateNestedField(data_state, [message.id_subject, message.id_object, "Quantity"], old_quantity + message.quantity));
+    }
+  }, [message]);
+
+  return <code>{JSON.stringify(data_state, null, 2)}</code>;
 }
 
 function App(): React.JSX.Element {
