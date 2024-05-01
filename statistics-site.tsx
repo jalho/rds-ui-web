@@ -371,14 +371,9 @@ function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: stri
 }
 
 function ObjectStats(props: { stats: MessageStatsInit[string][string]; object_id: string }): React.JSX.Element {
-  const timestamp_localized: string = new Date(props.stats.Timestamp_unix_sec_latest * 1000).toLocaleString(undefined, {
-    dateStyle: "short",
-    timeStyle: "medium",
-  });
   return (
     <>
-      <ObjectPlacard object_id={props.object_id} />: <code className="significant-value">{props.stats.Quantity}</code>{" "}
-      at {timestamp_localized}
+      <ObjectPlacard object_id={props.object_id} />: <code className="significant-value">{props.stats.Quantity}</code>
     </>
   );
 }
