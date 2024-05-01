@@ -231,7 +231,7 @@ function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
   const players_per_object_sorted = get_players_per_object_sorted(props.data);
 
   const [filter, set_filter] = React.useState<string>("");
-  let objects = Object.entries(players_per_object_sorted);
+  let objects = Object.entries(players_per_object_sorted).sort((a, b) => a[0].localeCompare(b[0]));
   if (filter.length > 0) {
     objects = objects.filter(function apply_filter([object_id]) {
       return object_id.includes(filter);
@@ -242,7 +242,7 @@ function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
     <>
       <h1>Players per object</h1>
 
-      <div>
+      <div className="list-filter-controls">
         <label htmlFor="filter_per_objectid">Filter per object ID:</label>
         <input
           type="text"
@@ -255,22 +255,24 @@ function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
         />
       </div>
 
-      {objects.map(function make_object_toplist([object_id, player_toplist]) {
-        return (
-          <div key={object_id}>
-            <ObjectPlacard object_id={object_id} />
-            <ol>
-              {player_toplist.map((item) => {
-                return (
-                  <li key={item.player_id}>
-                    <PlayerPlacard player_id={item.player_id} />: {item.quantity}
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        );
-      })}
+      <div className="stats-list">
+        {objects.map(function make_object_toplist([object_id, player_toplist]) {
+          return (
+            <div key={object_id} className="object">
+              <ObjectPlacard object_id={object_id} />
+              <ol>
+                {player_toplist.map((item) => {
+                  return (
+                    <li key={item.player_id}>
+                      <PlayerPlacard player_id={item.player_id} />: {item.quantity}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }
@@ -288,7 +290,7 @@ function PlayerList(props: { data: MessageStatsInit }): React.JSX.Element {
     <>
       <h1>Objects per player</h1>
 
-      <div>
+      <div className="list-filter-controls">
         <label htmlFor="filter_per_player_steamid">Filter per player Steam ID:</label>
         <input
           type="text"
@@ -301,9 +303,15 @@ function PlayerList(props: { data: MessageStatsInit }): React.JSX.Element {
         />
       </div>
 
-      {players.map(function make_player_stats([subject_id, stats]) {
-        return <SubjectStats key={subject_id} subject_id={subject_id} stats={stats} />;
-      })}
+      <div className="stats-list">
+        {players.map(function make_player_stats([subject_id, stats]) {
+          return (
+            <div key={subject_id} className="player">
+              <SubjectStats subject_id={subject_id} stats={stats} />
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }
@@ -331,13 +339,15 @@ function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: stri
     <div>
       <PlayerPlacard player_id={props.subject_id} />
       <ul>
-        {Object.entries(props.stats).map(function make_object_stats([object_id, stats]) {
-          return (
-            <li key={object_id}>
-              <ObjectStats object_id={object_id} stats={stats} />
-            </li>
-          );
-        })}
+        {Object.entries(props.stats)
+          .sort((a, b) => b[1].Quantity - a[1].Quantity)
+          .map(function make_object_stats([object_id, stats]) {
+            return (
+              <li key={object_id}>
+                <ObjectStats object_id={object_id} stats={stats} />
+              </li>
+            );
+          })}
       </ul>
     </div>
   );
