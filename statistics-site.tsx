@@ -206,14 +206,79 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
   );
 }
 
+function get_players_per_object_sorted(players_data: MessageStatsInit) {
+  const result: Record<string, Array<{ player_id: string; quantity: number }>> = {};
+
+  for (const [player_id, object_stats] of Object.entries(players_data)) {
+    for (const [object_id, stats] of Object.entries(object_stats)) {
+      if (!result[object_id]) {
+        result[object_id] = [{ player_id, quantity: stats.Quantity }];
+      } else {
+        result[object_id].push({ player_id, quantity: stats.Quantity });
+      }
+    }
+  }
+  for (const player_list of Object.values(result)) {
+    player_list.sort(function sort_by_quantity_descending(a, b) {
+      return b.quantity - a.quantity;
+    });
+  }
+
+  return result;
+}
+
 function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
-  return <>TODO: Top-5 lists of each resource here...</>;
+  const players_per_object_sorted = get_players_per_object_sorted(props.data);
+  return (
+    <>
+      <h1>Players per object</h1>
+      {Object.entries(players_per_object_sorted).map(function make_object_toplist([object_id, player_toplist]) {
+        return (
+          <div key={object_id}>
+            <ObjectPlacard object_id={object_id} />
+            <ol>
+              {player_toplist.map((item) => {
+                return (
+                  <li key={item.player_id}>
+                    <PlayerPlacard player_id={item.player_id} />: {item.quantity}
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        );
+      })}
+    </>
+  );
 }
 
 function PlayerList(props: { data: MessageStatsInit }): React.JSX.Element {
+  const [filter, set_filter] = React.useState<string>("");
+  let players = Object.entries(props.data);
+  if (filter.length > 0) {
+    players = players.filter(function apply_filter([player_id]) {
+      return player_id.includes(filter);
+    });
+  }
+
   return (
     <>
-      {Object.entries(props.data).map(function make_player_stats([subject_id, stats]) {
+      <h1>Objects per player</h1>
+
+      <div>
+        <label htmlFor="filter_per_player_steamid">Filter per player Steam ID:</label>
+        <input
+          type="text"
+          id="filter_per_player_steamid"
+          name="filter_per_player_steamid"
+          value={filter}
+          onChange={function handle_change(event) {
+            set_filter(event.target.value);
+          }}
+        />
+      </div>
+
+      {players.map(function make_player_stats([subject_id, stats]) {
         return <SubjectStats key={subject_id} subject_id={subject_id} stats={stats} />;
       })}
     </>
@@ -223,18 +288,18 @@ function PlayerList(props: { data: MessageStatsInit }): React.JSX.Element {
 function PlayerPlacard(props: { player_id: string }): React.JSX.Element {
   // TODO: use some metadata fetcher HOC and view player display name etc.
   return (
-    <h1>
+    <>
       Steam ID: <code>{props.player_id}</code>
-    </h1>
+    </>
   );
 }
 
 function ObjectPlacard(props: { object_id: string }): React.JSX.Element {
   // TODO: use some decoration fetcher HOC and view resource thumbnail image or something
   return (
-    <h2>
-      object ID: <code>{trim_object_id(props.object_id)}</code> (trimmed)
-    </h2>
+    <>
+      <code>{trim_object_id(props.object_id)}</code>
+    </>
   );
 }
 
@@ -242,19 +307,24 @@ function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: stri
   return (
     <div>
       <PlayerPlacard player_id={props.subject_id} />
-      {Object.entries(props.stats).map(function make_object_stats([object_id, stats]) {
-        return <ObjectStats key={object_id} object_id={object_id} stats={stats} />;
-      })}
+      <ul>
+        {Object.entries(props.stats).map(function make_object_stats([object_id, stats]) {
+          return (
+            <li key={object_id}>
+              <ObjectStats object_id={object_id} stats={stats} />
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
 
 function ObjectStats(props: { stats: MessageStatsInit[string][string]; object_id: string }): React.JSX.Element {
   return (
-    <div>
-      <ObjectPlacard object_id={props.object_id} />
-      <code>{props.stats.Quantity}</code>
-    </div>
+    <>
+      <ObjectPlacard object_id={props.object_id} />: <code>{props.stats.Quantity}</code>
+    </>
   );
 }
 
