@@ -209,10 +209,10 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
     <>
       <section>
         <h1>Some real time stats</h1>
-        <p>These stats should update in real time without having to reload the page.</p>
+        <p>These stats update in real time without having to reload the page.</p>
         <p>
-          The stats are not written to disk, but are instead only kept in memory. The process will restart and thus wipe
-          the stats upon the regular (weekly) map wipes.
+          The stats are not written to disk, but are instead only kept in memory.
+          The process will restart and thus wipe the stats upon the regular (weekly) map wipes.
         </p>
       </section>
 
