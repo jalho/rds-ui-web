@@ -196,8 +196,12 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
         set_data_state(
           update_or_init_nested_property(
             data_state,
-            [message.id_subject, message.id_object, "Quantity"],
-            old_quantity + message.quantity
+            [message.id_subject, message.id_object],
+            {
+              Quantity: old_quantity + message.quantity,
+              Timestamp_unix_sec_latest: message.timestamp,
+              received_at: Date.now()
+            }
           )
         );
       }
@@ -378,10 +382,27 @@ function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: stri
 }
 
 function ObjectStats(props: { stats: MessageStatsInit[string][string]; object_id: string }): React.JSX.Element {
+  const [now_timestamp, set_now_timestamp] = React.useState<number>(Date.now());
+  React.useEffect(() => {
+    const timerID = setInterval(() => {
+      set_now_timestamp(Date.now());
+    }, 1000);
+    return () => clearInterval(timerID);
+  }, []);
+
+  const received_at_timestamp: number = (props.stats as any).received_at;
+  let style_classes = "";
+  if (Number.isInteger(received_at_timestamp)) {
+    const delta = Math.abs(received_at_timestamp - now_timestamp);
+    if (delta < 3000) style_classes = "recently-changed-value";
+  }
+
   return (
-    <>
-      <ObjectPlacard object_id={props.object_id} />: <code className="significant-value">{props.stats.Quantity}</code>
-    </>
+    <div className={style_classes}>
+      <ObjectPlacard object_id={props.object_id} />:{" "}
+      <code className="significant-value">{props.stats.Quantity}</code>{" "}
+      at {new Date(props.stats.Timestamp_unix_sec_latest * 1000).toLocaleString(undefined, { timeStyle: "medium", dateStyle: "short" })}
+    </div>
   );
 }
 
