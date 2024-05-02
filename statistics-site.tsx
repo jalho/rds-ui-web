@@ -38,12 +38,19 @@ function use_websocket_message(websocket: WebSocket): MessageStatsInit | Message
   return message;
 }
 
+enum MessageCategory {
+  PvP = 0,
+  PvE,
+  Farm,
+  World,
+}
+
 type MessageStatsIncrement = {
   /**
    * Enum. See the Carbon plugin ('activity_sock') and/or rds-stats-sink
    * thingy. TODO: Use category as type discriminator!
    */
-  category: number;
+  category: MessageCategory;
   /**
    * Unix timestamp (in seconds) of when the event occurred.
    */
@@ -177,14 +184,14 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
   }, []);
 
   React.useEffect(
-    function increment_data_state() {
+    function handle_message() {
       // initialize state
       if (!is_MessageStatsIncrement(message)) {
         set_data_state(message);
       }
 
       // increment state
-      else {
+      else if (message.category === MessageCategory.Farm) {
         const old_quantity = data_state[message.id_subject]?.[message.id_object]?.Quantity ?? 0;
         set_data_state(
           update_or_init_nested_property(
