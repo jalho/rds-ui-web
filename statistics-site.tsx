@@ -415,7 +415,7 @@ function SubjectStats(props: { stats: StatsLocal[string]; subject_id: string }):
           .map(function make_object_stats([object_id, stats]) {
             return (
               <li key={object_id}>
-                <ObjectStats object_id={object_id} stats={stats} />
+                <ObjectStats object_id={object_id} stats={stats} show_date={false} />
               </li>
             );
           })}
@@ -424,16 +424,27 @@ function SubjectStats(props: { stats: StatsLocal[string]; subject_id: string }):
   );
 }
 
-function ObjectStats(props: { stats: StatsLocal[string][string]; object_id: string }): React.JSX.Element {
+function ObjectStats(props: {
+  stats: StatsLocal[string][string];
+  object_id: string;
+  show_date: boolean;
+}): React.JSX.Element {
+  const date: React.JSX.Element = !props.show_date ? (
+    <></>
+  ) : (
+    <>
+      {` at ${new Date(props.stats.Timestamp_unix_sec_latest * 1000).toLocaleString(undefined, {
+        timeStyle: "medium",
+        dateStyle: "short",
+      })}`}
+    </>
+  );
+
   return (
     <HiglightableOnUpdate stats={props.stats}>
       <>
-        <ObjectPlacard object_id={props.object_id} />: <code className="significant-value">{props.stats.Quantity}</code>{" "}
-        at{" "}
-        {new Date(props.stats.Timestamp_unix_sec_latest * 1000).toLocaleString(undefined, {
-          timeStyle: "medium",
-          dateStyle: "short",
-        })}
+        <ObjectPlacard object_id={props.object_id} />: <code className="significant-value">{props.stats.Quantity}</code>
+        {date}
       </>
     </HiglightableOnUpdate>
   );
