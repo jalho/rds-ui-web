@@ -186,8 +186,13 @@ function update_or_init_nested_property<T, V>(obj: T, ramda_lens_path: ramda.Pat
   return obj_updated;
 }
 
+function get_log_timestamp(timestamp: Date): string {
+  return timestamp.toLocaleString(undefined, { dateStyle: "short", timeStyle: "medium" });
+}
+
 function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
   const [data_state, set_data_state] = React.useState<StatsLocal>({});
+  const [message_log, set_message_log] = React.useState<Array<string>>([]);
   const message: MessageStatsInit | MessageStatsIncrement = use_websocket_message(props.websocket);
 
   // request for inital state
@@ -211,6 +216,15 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
 
       // increment state
       else if (message.category === MessageCategory.Farm) {
+        const log = [
+          ...message_log,
+          `[${get_log_timestamp(new Date(message.timestamp * 1000))}] ${MessageCategory[MessageCategory.Farm]}: ${
+            message.id_subject
+          } -> ${trim_object_id(message.id_object)}: ${message.quantity}`,
+        ];
+        if (log.length > 10) log.shift();
+        set_message_log(log);
+
         const old_quantity = data_state[message.id_subject]?.[message.id_object]?.Quantity ?? 0;
         set_data_state(
           update_or_init_nested_property(data_state, [message.id_subject, message.id_object], {
@@ -236,6 +250,11 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
       </section>
 
       <section>
+        <h1>Latest activity</h1>
+        <MessageLog log={message_log} />
+      </section>
+
+      <section>
         <div className="horizontal">
           <ObjectList data={data_state} />
           <PlayerList data={data_state} />
@@ -243,6 +262,20 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
       </section>
     </>
   );
+}
+
+function MessageLog(props: { log: Array<string> }): React.JSX.Element {
+  if (props.log.length === 0) {
+    return <></>;
+  } else {
+    return (
+      <code className="message-log">
+        {props.log.map((n) => {
+          return <span key={n}>{n}</span>;
+        })}
+      </code>
+    );
+  }
 }
 
 function get_players_per_object_sorted(
