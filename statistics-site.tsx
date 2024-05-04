@@ -222,8 +222,11 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
             message.id_subject
           } -> ${trim_object_id(message.id_object)}: ${message.quantity}`,
         ];
-        if (log.length > 10) log.shift();
-        set_message_log(log);
+        if (log.length >= 10) {
+          set_message_log(log.slice(-10));
+        } else {
+          set_message_log(log);
+        }
 
         const old_quantity = data_state[message.id_subject]?.[message.id_object]?.Quantity ?? 0;
         set_data_state(
