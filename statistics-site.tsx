@@ -252,10 +252,12 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
         </p>
       </section>
 
+      {/*
       <section>
         <h1>Latest activity</h1>
         <MessageLog log={message_log} />
       </section>
+      */}
 
       <section>
         <div className="horizontal">
