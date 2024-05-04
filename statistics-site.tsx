@@ -70,13 +70,25 @@ type MessageStatsIncrement = {
   quantity: number;
 };
 
-type MessageStatsInit = Record<
+type StatsStore<Stat> = Record<
   string, // 17-digit Steam ID of a player
   Record<
     string, // farm object, e.g. "wood"
-    { Quantity: number; Timestamp_unix_sec_init: number; Timestamp_unix_sec_latest: number }
+    Stat
   >
 >;
+
+type MessageStatsInit = StatsStore<{
+  Quantity: number;
+  Timestamp_unix_sec_init: number;
+  Timestamp_unix_sec_latest: number;
+}>;
+type StatsLocal = StatsStore<{
+  Quantity: number;
+  Timestamp_unix_sec_init: number;
+  Timestamp_unix_sec_latest: number;
+  received_at: number;
+}>;
 
 enum WebSocketState {
   CONNECTING = 0,
@@ -175,7 +187,7 @@ function update_or_init_nested_property<T, V>(obj: T, ramda_lens_path: ramda.Pat
 }
 
 function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
-  const [data_state, set_data_state] = React.useState<MessageStatsInit>({});
+  const [data_state, set_data_state] = React.useState<StatsLocal>({});
   const message: MessageStatsInit | MessageStatsIncrement = use_websocket_message(props.websocket);
 
   // request for inital state
@@ -185,24 +197,27 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
 
   React.useEffect(
     function handle_message() {
+      const now_timestamp = Date.now();
+
       // initialize state
       if (!is_MessageStatsIncrement(message)) {
-        set_data_state(message);
+        for (const [id_subject, subject_stats] of Object.entries(message as StatsLocal)) {
+          for (const [id_object, stats] of Object.entries(subject_stats)) {
+            stats.received_at = now_timestamp;
+          }
+        }
+        set_data_state(message as StatsLocal);
       }
 
       // increment state
       else if (message.category === MessageCategory.Farm) {
         const old_quantity = data_state[message.id_subject]?.[message.id_object]?.Quantity ?? 0;
         set_data_state(
-          update_or_init_nested_property(
-            data_state,
-            [message.id_subject, message.id_object],
-            {
-              Quantity: old_quantity + message.quantity,
-              Timestamp_unix_sec_latest: message.timestamp,
-              received_at: Date.now()
-            }
-          )
+          update_or_init_nested_property(data_state, [message.id_subject, message.id_object], {
+            Quantity: old_quantity + message.quantity,
+            Timestamp_unix_sec_latest: message.timestamp,
+            received_at: now_timestamp,
+          })
         );
       }
     },
@@ -215,8 +230,8 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
         <h1>Some real time stats</h1>
         <p>These stats update in real time without having to reload the page.</p>
         <p>
-          The stats are not written to disk, but are instead only kept in memory.
-          The process will restart and thus wipe the stats upon the regular (weekly) map wipes.
+          The stats are not written to disk, but are instead only kept in memory. The process will restart and thus wipe
+          the stats upon the regular (weekly) map wipes.
         </p>
       </section>
 
@@ -230,15 +245,17 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
   );
 }
 
-function get_players_per_object_sorted(players_data: MessageStatsInit) {
-  const result: Record<string, Array<{ player_id: string; quantity: number }>> = {};
+function get_players_per_object_sorted(
+  players_data: StatsLocal
+): Record<string, Array<{ player_id: string; quantity: number; received_at: number }>> {
+  const result: ReturnType<typeof get_players_per_object_sorted> = {};
 
   for (const [player_id, object_stats] of Object.entries(players_data)) {
     for (const [object_id, stats] of Object.entries(object_stats)) {
       if (!result[object_id]) {
-        result[object_id] = [{ player_id, quantity: stats.Quantity }];
+        result[object_id] = [{ player_id, quantity: stats.Quantity, received_at: stats.received_at }];
       } else {
-        result[object_id].push({ player_id, quantity: stats.Quantity });
+        result[object_id].push({ player_id, quantity: stats.Quantity, received_at: stats.received_at });
       }
     }
   }
@@ -251,7 +268,7 @@ function get_players_per_object_sorted(players_data: MessageStatsInit) {
   return result;
 }
 
-function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
+function ObjectList(props: { data: StatsLocal }): React.JSX.Element {
   const players_per_object_sorted = get_players_per_object_sorted(props.data);
 
   const [filter, set_filter] = React.useState<string>("");
@@ -292,9 +309,12 @@ function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
               <ol>
                 {player_toplist.map((item) => {
                   return (
-                    <li key={item.player_id}>
-                      <PlayerPlacard player_id={item.player_id} />: <code className="significant-value">{item.quantity}</code>
-                    </li>
+                    <HiglightableOnUpdate key={item.player_id} stats={item}>
+                      <li>
+                        <PlayerPlacard player_id={item.player_id} />:{" "}
+                        <code className="significant-value">{item.quantity}</code>
+                      </li>
+                    </HiglightableOnUpdate>
                   );
                 })}
               </ol>
@@ -306,7 +326,30 @@ function ObjectList(props: { data: MessageStatsInit }): React.JSX.Element {
   );
 }
 
-function PlayerList(props: { data: MessageStatsInit }): React.JSX.Element {
+function HiglightableOnUpdate<T extends { received_at: number }>(props: {
+  stats: T;
+  children: React.JSX.Element;
+}): React.JSX.Element {
+  const [now_timestamp, set_now_timestamp] = React.useState<number>(Date.now());
+  React.useEffect(() => {
+    const timerID = setInterval(() => {
+      set_now_timestamp(Date.now());
+    }, 1000);
+    return () => clearInterval(timerID);
+  }, []);
+
+  let style_classes = "";
+  const delta = Math.abs(props.stats.received_at - now_timestamp);
+  if (delta < 3000) style_classes = "recently-changed-value";
+
+  return (
+    <>
+      <div className={style_classes}>{props.children}</div>
+    </>
+  );
+}
+
+function PlayerList(props: { data: StatsLocal }): React.JSX.Element {
   const [filter, set_filter] = React.useState<string>("");
   let players = Object.entries(props.data);
   if (filter.length > 0) {
@@ -362,7 +405,7 @@ function ObjectPlacard(props: { object_id: string }): React.JSX.Element {
   );
 }
 
-function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: string }): React.JSX.Element {
+function SubjectStats(props: { stats: StatsLocal[string]; subject_id: string }): React.JSX.Element {
   return (
     <div>
       <PlayerPlacard player_id={props.subject_id} />
@@ -381,28 +424,18 @@ function SubjectStats(props: { stats: MessageStatsInit[string]; subject_id: stri
   );
 }
 
-function ObjectStats(props: { stats: MessageStatsInit[string][string]; object_id: string }): React.JSX.Element {
-  const [now_timestamp, set_now_timestamp] = React.useState<number>(Date.now());
-  React.useEffect(() => {
-    const timerID = setInterval(() => {
-      set_now_timestamp(Date.now());
-    }, 1000);
-    return () => clearInterval(timerID);
-  }, []);
-
-  const received_at_timestamp: number = (props.stats as any).received_at;
-  let style_classes = "";
-  if (Number.isInteger(received_at_timestamp)) {
-    const delta = Math.abs(received_at_timestamp - now_timestamp);
-    if (delta < 3000) style_classes = "recently-changed-value";
-  }
-
+function ObjectStats(props: { stats: StatsLocal[string][string]; object_id: string }): React.JSX.Element {
   return (
-    <div className={style_classes}>
-      <ObjectPlacard object_id={props.object_id} />:{" "}
-      <code className="significant-value">{props.stats.Quantity}</code>{" "}
-      at {new Date(props.stats.Timestamp_unix_sec_latest * 1000).toLocaleString(undefined, { timeStyle: "medium", dateStyle: "short" })}
-    </div>
+    <HiglightableOnUpdate stats={props.stats}>
+      <>
+        <ObjectPlacard object_id={props.object_id} />: <code className="significant-value">{props.stats.Quantity}</code>{" "}
+        at{" "}
+        {new Date(props.stats.Timestamp_unix_sec_latest * 1000).toLocaleString(undefined, {
+          timeStyle: "medium",
+          dateStyle: "short",
+        })}
+      </>
+    </HiglightableOnUpdate>
   );
 }
 
