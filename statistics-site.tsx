@@ -268,17 +268,13 @@ function ViewConnected(props: { websocket: WebSocket }): React.JSX.Element {
 }
 
 function MessageLog(props: { log: Array<string> }): React.JSX.Element {
-  if (props.log.length === 0) {
-    return <></>;
-  } else {
-    return (
-      <code className="message-log">
-        {props.log.map((n) => {
-          return <span key={n}>{n}</span>;
-        })}
-      </code>
-    );
-  }
+  return (
+    <code className="message-log">
+      {props.log.map((n) => {
+        return <span key={n}>{n}</span>;
+      })}
+    </code>
+  );
 }
 
 function get_players_per_object_sorted(
