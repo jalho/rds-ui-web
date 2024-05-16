@@ -488,7 +488,7 @@ function App(): React.JSX.Element {
   return (
     <ContainConnectedWs
       view_connected={(websocket) => <ViewConnected websocket={websocket} />}
-      view_disconnected={<>Diconnected</>}
+      view_disconnected={<>Disconnected</>}
     />
   );
 }
